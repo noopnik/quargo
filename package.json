@@ -1,19 +1,30 @@
 {
   "name": "quargo",
-  "version": "0.0.1",
-  "author": "Pierre-Élie Fauché <github@pierre-elie.me>",
   "description": "Queued cargo, with load optimization",
-  "dependencies": {},
+  "version": "0.0.1",
+  "main": "./lib/quargo",
+  "author": "Pierre-Élie Fauché <github@pierre-elie.me>",
+  "homepage": "https://github.com/pierreliefauche/quargo",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pierreliefauche/quargo"
+  },
+  "bugs": {
+    "url": "https://github.com/pierreliefauche/quargo/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/pierreliefauche/quargo/raw/master/LICENSE"
+    }
+  ],
   "devDependencies": {
     "mocha": "~1.11.0"
   },
-  "repository": {
-    "url": "https://github.com/pierreliefauche/quargo",
-    "type": "git"
-  },
-  "main": "index",
+  "dependencies": {},
   "engines": {
-    "node": ">=0.8.0"
+    "node": ">=0.6.0"
   },
   "scripts": {
     "test": "NODE_ENV=test ./node_modules/.bin/mocha --check-leaks test/*"

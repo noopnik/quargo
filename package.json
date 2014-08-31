@@ -1,7 +1,7 @@
 {
   "name": "quargo",
   "description": "Queued cargo, with load optimization",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "./lib/quargo",
   "author": "Pierre-Élie Fauché <github@pierre-elie.me>",
   "homepage": "https://github.com/pierreliefauche/quargo",

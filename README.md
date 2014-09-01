@@ -1,12 +1,12 @@
 # Quargo
 
-A mix of [async](https://github.com/caolan/async)’s [`queue`](https://github.com/caolan/async#queue) and [`cargo`](https://github.com/caolan/async#cargo) with capacity optimization.
+A [`cargo`](https://github.com/caolan/async#cargo) with [`queue`](https://github.com/caolan/async#queue)-like parallel processing and capacity optimization.
 
 [![NPM](https://nodei.co/npm/quargo.png)](https://nodei.co/npm/quargo/)
 
 ---
 
-### quargo(worker, [capacity, [concurrency, [delay]]])
+### quargo(worker, capacity, [concurrency, [delay]])
 
 Creates a `quargo` object with the specified `capacity`, `concurrency` and `delay`. Tasks added to the `quargo` will be processed altogether (up to the `capacity` limit) in parallel batches (up to the `concurrency` limit). If all workers are in progress, the task is queued until one becomes available. If the `quargo` hasn’t reached `capacity`, the task is queued for `delay` milliseconds. Once a worker has completed some tasks, each callback of those tasks is called.
 
@@ -21,7 +21,7 @@ Quargo passes an array of tasks to one of a group of workers, repeating when the
 ##### Arguments
 
 - `worker(tasks, callback)` - An asynchronous function for processing an array of queued tasks, which must call its `callback(err)` argument when finished, with an optional `err` argument.
-- `capacity` - An optional integer for determining how many tasks should be processed per round; if omitted, the default is unlimited.
+- `capacity` - An integer for determining how many tasks should be processed per round.
 - `concurrency` - An optional integer for determining how many worker functions should be run in parallel; if omitted, the default is `1`.
 - `delay` - An optional integer for determining how long should the `quargo` wait to reach `capacity`; if omitted, the default is `0`.
 
@@ -36,6 +36,28 @@ The `quargo` object returned has the following properties and methods:
 - `push(task, [callback])` - adds `task` to the `quargo`. Calls `callback` once the `worker` has finished processing the task. Instead of a single task, a `tasks` array can be submitted. The respective callback is used for every task in the list.
 - `empty` - A callback that is called when the last item from the `quargo` is given to a `worker`.
 - `drain` - A callback that is called when the last item from the `quargo` has returned from the `worker`.
+
+---
+
+### Initialization
+
+#### Async-like
+
+- `quargo(worker, capacity)`
+- `quargo(worker, capacity, concurrency)`
+- `quargo(worker, capacity, concurrency, delay)`
+
+#### With options
+
+- `quargo(worker, options)`
+- `quargo(options, worker)`
+
+Possible `options` are
+- `capacity`
+- `concurrency`
+- `delay`
+- `empty` callback
+- `drain` callback
 
 ---
 

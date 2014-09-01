@@ -1,8 +1,11 @@
 # Quargo
 
 A [`cargo`](https://github.com/caolan/async#cargo) with [`queue`](https://github.com/caolan/async#queue)-like parallel processing and capacity optimization.
+[![Build Status](https://travis-ci.org/pierreliefauche/quargo.svg?branch=master)](https://travis-ci.org/pierreliefauche/quargo)
 
 [![NPM](https://nodei.co/npm/quargo.png)](https://nodei.co/npm/quargo/)
+
+
 
 ---
 

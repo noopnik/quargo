@@ -1,7 +1,7 @@
 {
   "name": "quargo",
   "description": "A cargo with queue-like parallel processing and capacity optimization.",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "main": "./lib/quargo",
   "author": "Pierre-Élie Fauché <github@pierre-elie.me>",
   "homepage": "https://github.com/pierreliefauche/quargo",

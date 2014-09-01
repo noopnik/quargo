@@ -675,4 +675,262 @@ describe('lib/quargo.js', function() {
       }, 30);
     });
   });
+
+  describe('flow', function() {
+    it('should process tasks asap if reached capacity', function(done) {
+      var q = quargo({
+        capacity: 2,
+        delay: 50
+      }, function(tasks, cb) {
+        cb();
+      });
+
+      var processed = 0;
+      q.push([1, 2], function() {
+        processed++;
+      });
+
+      setTimeout(function() {
+        assert.deepEqual(processed, 2);
+        done();
+      }, 1);
+    });
+
+    it('should wait for `delay` before processing tasks', function(done) {
+      var q = quargo({
+        capacity: 10,
+        delay: 55
+      }, function(tasks, cb) {
+        assert.deepEqual(tasks, [0, 1, 2, 3, 4]);
+        cb();
+      });
+
+      var processed = 0;
+
+      var pushWithDelay = function(i) {
+        setTimeout(function() {
+          q.push(i, function() {
+            processed++;
+          });
+        }, i*10);
+      };
+
+      for (var i = 0; i < 5; i++) {
+        pushWithDelay(i);
+      }
+
+      setTimeout(function() {
+        assert.deepEqual(processed, 0);
+        assert.deepEqual(q.length(), 5);
+        setTimeout(function() {
+          assert.deepEqual(processed, 5);
+          assert.deepEqual(q.length(), 0);
+          done();
+        }, 4);
+      }, 53);
+    });
+
+    it('should process up to `capacity` right away and remaining after delay', function(done) {
+      var batch = 0;
+      var q = quargo({
+        capacity: 10,
+        delay: 55
+      }, function(tasks, cb) {
+        batch++;
+        if (batch === 1) {
+          assert.deepEqual(tasks, [0, 0, 0, 1, 1, 1, 2, 2, 2, 3]);
+        }
+        else if (batch === 2) {
+          assert.deepEqual(tasks, [3, 3, 4, 4, 4]);
+        }
+        else {
+          assert.fail();
+        }
+        cb();
+      });
+
+      var processed = 0;
+
+      var pushWithDelay = function(i) {
+        setTimeout(function() {
+          q.push([i, i, i], function() {
+            processed++;
+          });
+        }, i*10);
+      };
+
+      for (var i = 0; i < 5; i++) {
+        pushWithDelay(i);
+      }
+
+      setTimeout(function() {
+        assert.deepEqual(processed, 0);
+        assert.deepEqual(q.length(), 9);
+        assert.deepEqual(batch, 0);
+      }, 27);
+
+      setTimeout(function() {
+        assert.deepEqual(processed, 10);
+        assert.deepEqual(q.length(), 2);
+        assert.deepEqual(batch, 1);
+      }, 33);
+
+      setTimeout(function() {
+        assert.deepEqual(processed, 10);
+        assert.deepEqual(q.length(), 5);
+        assert.deepEqual(batch, 1);
+      }, 82);
+
+      setTimeout(function() {
+        assert.deepEqual(processed, 15);
+        assert.deepEqual(q.length(), 0);
+        assert.deepEqual(batch, 2);
+        done();
+      }, 88);
+    });
+
+    it('should use all available workers', function(done) {
+      var batch = 0;
+
+      var q = quargo({
+        capacity: 4,
+        concurrency: 2,
+        delay: 55
+      }, function(tasks, cb) {
+        batch++;
+        if (batch === 1) {
+          assert.deepEqual(tasks, [0, 0, 0, 1]);
+        }
+        else if (batch === 2) {
+          assert.deepEqual(tasks, [1, 1, 2, 2]);
+        }
+        else if (batch === 3) {
+          assert.deepEqual(tasks, [2, 3, 3, 3]);
+        }
+        else if (batch === 4) {
+          assert.deepEqual(tasks, [4, 4, 4]);
+        }
+        else {
+          assert.fail();
+        }
+        setTimeout(cb, 28);
+      });
+
+      var processed = 0;
+
+      var pushWithDelay = function(i) {
+        setTimeout(function() {
+          q.push([i, i, i], function() {
+            processed++;
+          });
+        }, i*10);
+      };
+
+      for (var i = 0; i < 5; i++) {
+        pushWithDelay(i);
+      }
+
+      // 10ms, add "1"s, triggers first batch with worker#1
+      setTimeout(function() {
+        assert.deepEqual(processed, 0);
+        assert.deepEqual(q.length(), 3);
+        assert.deepEqual(batch, 0);
+      }, 7);
+      setTimeout(function() {
+        assert.deepEqual(processed, 0);
+        assert.deepEqual(q.length(), 2);
+        assert.deepEqual(batch, 1);
+      }, 13);
+
+      // 20ms, add "2"s, triggers second batch with worker#2
+      setTimeout(function() {
+        assert.deepEqual(processed, 0);
+        assert.deepEqual(q.length(), 2);
+        assert.deepEqual(batch, 1);
+      }, 17);
+      setTimeout(function() {
+        assert.deepEqual(processed, 0);
+        assert.deepEqual(q.length(), 1);
+        assert.deepEqual(batch, 2);
+      }, 23);
+
+      // 30ms, add "3"s, they are queued
+      setTimeout(function() {
+        assert.deepEqual(processed, 0);
+        assert.deepEqual(q.length(), 1);
+        assert.deepEqual(batch, 2);
+      }, 27);
+      setTimeout(function() {
+        assert.deepEqual(processed, 0);
+        assert.deepEqual(q.length(), 4);
+        assert.deepEqual(batch, 2);
+      }, 33);
+
+      // 40ms, add "4"s, they are queued; first batch completes, third batch begins with worker#1
+      setTimeout(function() {
+        assert.deepEqual(processed, 0);
+        assert.deepEqual(q.length(), 4);
+        assert.deepEqual(batch, 2);
+      }, 37);
+      setTimeout(function() {
+        assert.deepEqual(processed, 4);
+        assert.deepEqual(q.length(), 3);
+        assert.deepEqual(batch, 3);
+      }, 44);
+
+      // 50ms, second batch completes, worker#2 goes idle
+      setTimeout(function() {
+        assert.deepEqual(processed, 4);
+        assert.deepEqual(q.length(), 3);
+        assert.deepEqual(batch, 3);
+      }, 47);
+      setTimeout(function() {
+        assert.deepEqual(processed, 8);
+        assert.deepEqual(q.length(), 3);
+        assert.deepEqual(batch, 3);
+      }, 53);
+
+      // 70ms, third batch completes, worker#1 goes idle
+      setTimeout(function() {
+        assert.deepEqual(processed, 8);
+        assert.deepEqual(q.length(), 3);
+        assert.deepEqual(batch, 3);
+      }, 67);
+      setTimeout(function() {
+        assert.deepEqual(processed, 12);
+        assert.deepEqual(q.length(), 3);
+        assert.deepEqual(batch, 3);
+      }, 73);
+
+      // 95ms, timer expires for "4"s, they are passed to worker#1
+      setTimeout(function() {
+        assert.deepEqual(processed, 12);
+        assert.deepEqual(q.length(), 3);
+        assert.deepEqual(batch, 3);
+        assert.deepEqual(q.running(), false);
+      }, 92);
+      setTimeout(function() {
+        assert.deepEqual(processed, 12);
+        assert.deepEqual(q.length(), 0);
+        assert.deepEqual(batch, 4);
+        assert.deepEqual(q.running(), true);
+      }, 98);
+
+      // 125ms, fourth batch completes, worker#1 goes idle
+      setTimeout(function() {
+        assert.deepEqual(processed, 12);
+        assert.deepEqual(q.length(), 0);
+        assert.deepEqual(batch, 4);
+        assert.deepEqual(q.running(), true);
+      }, 122);
+      setTimeout(function() {
+        assert.deepEqual(processed, 15);
+        assert.deepEqual(q.length(), 0);
+        assert.deepEqual(batch, 4);
+        assert.deepEqual(q.running(), false);
+        assert.deepEqual(q.idle(), true);
+        done();
+      }, 128);
+    });
+  });
 });
